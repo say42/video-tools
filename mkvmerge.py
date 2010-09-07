@@ -38,7 +38,7 @@ def uprint(strings):
         print s.encode('utf-8')
 
 
-if platform.system == 'Windows':
+if platform.system() == 'Windows':
     uargv = map(lambda s: unicode(s, 'mbcs'), sys.argv[1:]) 
 else:
     uargv = map(lambda s: unicode(s, 'utf-8'), sys.argv[1:]) 
@@ -67,10 +67,24 @@ for arg in uargv[1:]:
     if ext in ('.ac3', '.mp4'):
         track['type'] = 'audio'
         track['ext'] = ext
+	# auto delay
         if not track.has_key('delay'):
             m = re.search(r'DELAY\s*(\d+)', track_file)
             if m:
-                track['delay'] = m.groups[1]
+                track['delay'] = m.group(1)
+	# auto title
+	if not track.has_key('title'):
+	    m = re.search(r'(\d_\d)ch', track_file)
+	    if m:
+	      titles = {
+		  '1_0': 'mono',
+		  '2_0': 'stereo',
+		  '3_2': '5.1',
+	      }
+	      for (k, v) in titles.items():
+		if m.group(1) == k:
+		  track['title'] = v
+		  break
     elif ext in ('.mkv'):
         track['type'] = 'video'
     elif ext in ('.mkv'):
@@ -95,25 +109,25 @@ if not tracks.has_key('audio'):
 
 # global options
 uprint(['--output', dest_file])
-uprint(['--default-language', def_lang])
+uprint(['--command-line-charset', 'utf-8'])
+#uprint(['--output-charset', 'utf-8'])
+#uprint(['--default-language', def_lang])
 # chapters
 if tracks.has_key('chapters'):
     tt = tracks['chapters']
     if len(tt) > 1:
         fail("Only single chapters file allowed")
     t = tt[0]
-    uprint(['--chapters', t['file']])
     uprint(['--chapter-charset', 'utf-8'])
-    if t.has_key('lang'):
-        uprint(['--chapter-language', t['lang']])
+    uprint(['--language', '-1:' + (t['lang'] if t.has_key('lang') else def_lang)])
+    uprint(['--chapters', t['file']])
 
 is_first_v_track = True
 for t in tracks['video']:
     if is_first_v_track:
         if t.has_key('title'):
             uprint(['--track-name', '-1:' + t['title']])
-        if t.has_key('lang'):
-            uprint(['--language', '-1:' + t['lang']])
+	uprint(['--language', '-1:' + (t['lang'] if t.has_key('lang') else def_lang)])
         uprint(['--default-track', '-1:1'])
         uprint([t['file']])
         is_first_v_track = False
@@ -124,14 +138,14 @@ is_first_a_track = True
 for t in tracks['audio']:
     if is_first_a_track:
         uprint(['--default-track', '-1:1'])
+	is_first_a_track = False
     if t.has_key('title'):
         uprint(['--track-name', '-1:' + t['title']])
-    if t.has_key('lang'):
-        uprint(['--language', '-1:' + t['lang']])
     if t.has_key('delay'):
         uprint(['--sync', '-1:' + t['delay']])
     if t['ext'] == '.mp4':
         uprint(['--no-chapters'])
+    uprint(['--language', '-1:' + (t['lang'] if t.has_key('lang') else def_lang)])
     uprint([t['file']])
 
 if tracks.has_key('subtitles'):
@@ -139,10 +153,9 @@ if tracks.has_key('subtitles'):
         uprint(['--default-track', '-1:0'])
         if t.has_key('title'):
             uprint(['--track-name', '-1:' + t['title']])
-        if t.has_key('lang'):
-            uprint(['--language', '-1:' + t['lang']])
         if t.has_key('delay'):
             uprint(['--sync', '-1:' + t['delay']])
+	uprint(['--language', '-1:' + (t['lang'] if t.has_key('lang') else def_lang)])
         uprint(['--sub-charset', '-1:ucs-2'])
         uprint([t['file']])
 
