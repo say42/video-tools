@@ -8,44 +8,44 @@ use Win32::Process;
 use POSIX qw(strftime);
 
 my %def_opts = (
-  'b-adapt' => 2, # make optimal B-frames choosing
-  'me' => 'umh',
-  'crf' => '18', # optimal for SD and HD
-  '+no-fast-pskip' => 1, # Recommended for crf
-  'bframes' => 8, # Actual value get from test encoding
-  'rc-lookahead' => 50, # perharps optimal. Default 40.
-  'trellis' => 2, # Optimal
-  'ref' => 16, # 1080p - 4, 720p - 9, SD - <= 16
-  'subme' => 10, # best
-  'merange' => 24, # 16 - default. Not usefull above 32
-  'deblock' => '-1:-1', # film tune
-  'aq-mode' => 2, # better fades
-  '+no-mbtree' => 1, # mbtree not good with aq=2
-  'output' => undef,
-  'psy-rd' => undef,
-  'aq-strength' => undef,
-  'no-dct-decimate' => undef,
-  'ipratio' => undef,
-  'pbratio' => undef,
-  'qcomp' => undef,
-  'direct' => undef,
-  'sar' => undef,
+	'b-adapt' => 2, # make optimal B-frames choosing
+	'me' => 'umh',
+	'crf' => '18', # optimal for SD and HD
+	'+no-fast-pskip' => 1, # Recommended for crf
+	'bframes' => 8, # Actual value get from test encoding
+	'rc-lookahead' => 50, # perharps optimal. Default 40.
+	'trellis' => 2, # Optimal
+	'ref' => 16, # 1080p - 4, 720p - 9, SD - <= 16
+	'subme' => 10, # best
+	'merange' => 24, # 16 - default. Not usefull above 32
+	'deblock' => '-1:-1', # film tune
+	'aq-mode' => 2, # better fades
+	'+no-mbtree' => 1, # mbtree not good with aq=2
+	'output' => undef,
+	'psy-rd' => undef,
+	'aq-strength' => undef,
+	'no-dct-decimate' => undef,
+	'ipratio' => undef,
+	'pbratio' => undef,
+	'qcomp' => undef,
+	'direct' => undef,
+	'sar' => undef,
 );
 
 my %sar_str = (
-  ntsc16 => '32:27',
-  ntsc4 => '8:9',
-  pal16 => '64:45',
-  pal4 => '16:15',
+	ntsc16 => '32:27',
+	ntsc4 => '8:9',
+	pal16 => '64:45',
+	pal4 => '16:15',
 );
 
 my %long_args;
 foreach my $name (keys %def_opts) {
-  if($name =~ /^\+/) {
-    $long_args{substr($name, 1) . "!"} = \$def_opts{$name};
-  } else {
-    $long_args{"$name=s"} = \$def_opts{$name};
-  }
+	if($name =~ /^\+/) {
+		$long_args{substr($name, 1) . "!"} = \$def_opts{$name};
+	} else {
+		$long_args{"$name=s"} = \$def_opts{$name};
+	}
 }
 my $no_idle = 0;
 $long_args{'no-idle!'} = \$no_idle;
@@ -53,17 +53,17 @@ $long_args{'no-idle!'} = \$no_idle;
 GetOptions(%long_args) or die;
 
 unless($no_idle) {
-  Win32::Process::Open(my $proc, $$, 0) or die ErrorReport();
-  $proc->SetPriorityClass(IDLE_PRIORITY_CLASS) or die ErrorReport();
+	Win32::Process::Open(my $proc, $$, 0) or die ErrorReport();
+	$proc->SetPriorityClass(IDLE_PRIORITY_CLASS) or die ErrorReport();
 }
 
 # input/output
 my $input = shift @ARGV || 'demux.avs';
 $input .= ".avs" if $input !~ /\.\w{3}$/;
 unless($def_opts{output}) {
-  my $output = $input;
-  $output =~ s/\.\w{3}$/.mkv/;
-  $def_opts{output} = $output;
+	my $output = $input;
+	$output =~ s/\.\w{3}$/.mkv/;
+	$def_opts{output} = $output;
 }
 $def_opts{output} .= ".mkv" if $def_opts{output} !~ /\.\w{3}$/;
 
@@ -73,7 +73,7 @@ $log =~ s/\.mkv$/.x264.log/;
 
 # sar
 if($def_opts{sar} && exists $sar_str{$def_opts{sar}}) {
-  $def_opts{sar} = $sar_str{$def_opts{sar}};
+	$def_opts{sar} = $sar_str{$def_opts{sar}};
 }
 
 # print Dumper(\%def_opts); exit; # FIXME
@@ -81,13 +81,13 @@ if($def_opts{sar} && exists $sar_str{$def_opts{sar}}) {
 my @args = ('x264');
 #@args = "xx264.pl"; # FIXME
 foreach my $name (sort keys %def_opts) {
-  if($name =~ /^\+/) {
-    if($def_opts{$name}) {
-      push(@args, "--" . substr($name, 1));
-    }
-  } elsif($def_opts{$name}) {
-    push(@args, "--$name $def_opts{$name}");
-  }
+	if($name =~ /^\+/) {
+		if($def_opts{$name}) {
+			push(@args, "--" . substr($name, 1));
+		}
+	} elsif($def_opts{$name}) {
+		push(@args, "--$name $def_opts{$name}");
+	}
 }
 push(@args, $input);
 my $cmdline = join(" ", @args, "2>&1");
@@ -104,22 +104,22 @@ open(my $hcmd, "$cmdline |") or die "cmd(): $!";
 binmode $hcmd;
 my $buf = '';
 while(!eof($hcmd)) {
-  read($hcmd, my $str, 100);
-  $buf .= $str;
-  while(my($line) = $buf =~ /^([^\r\n]*?[\r\n]+)/) {
-     print $hlog "$line" unless $line =~ /^\[\d+\.\d+%\]/ || $line =~ /^ +\r$/;
-     $buf =~ s/^[^\r\n]*?[\r\n]+//;
-  }
+	read($hcmd, my $str, 100);
+	$buf .= $str;
+	while(my($line) = $buf =~ /^([^\r\n]*?[\r\n]+)/) {
+		 print $hlog "$line" unless $line =~ /^\[\d+\.\d+%\]/ || $line =~ /^ +\r$/;
+		 $buf =~ s/^[^\r\n]*?[\r\n]+//;
+	}
 }
 print $hlog $buf;
 close($hcmd);
 
 my $dur = time - $starttime;
 printf $hlog "\nFinished %s (%dd %02dh %02dm)\n",
-  strftime("%Y-%m-%d %H:%M:%S", localtime()),
-  int($dur /3600 / 24),
-  int($dur / 3600) % 24,
-  int($dur / 60) % 60,
-  ;
+	strftime("%Y-%m-%d %H:%M:%S", localtime()),
+	int($dur /3600 / 24),
+	int($dur / 3600) % 24,
+	int($dur / 60) % 60,
+;
 
 close($hlog);
