@@ -6,6 +6,8 @@ import sys
 import platform
 import re
 import copy
+import tempfile
+import codecs
 
 OPT_SEPARATOR = '@'
 
@@ -15,6 +17,7 @@ TRACK_EXTS = {
     '.mkv': 'video',
     '.txt': 'chapters',
     '.srt': 'subtitles',
+    '.idx': 'subtitles',
 }
 
 TRACK_TYPES = {
@@ -30,7 +33,7 @@ TRACK_TYPES = {
     },
     'subtitles': {
         'valid_opts': 'lang title delay'.split(),
-        'guess_opts': 'delay title'.split(),
+        'guess_opts': 'delay'.split(),
     },
     'DEFAULT': {
        'valid_opts': 'lang'.split(),
@@ -97,15 +100,8 @@ def print_options(opts):
         uprint(['--sync', '-1:' + opts['delay']])
 
 
-def uprint(strings):
-    for s in strings:
-        print s.encode('utf-8')
-
-
-if platform.system() == 'Windows':
-    uargv = map(lambda s: unicode(s, 'mbcs'), sys.argv[1:]) 
-else:
-    uargv = map(lambda s: unicode(s, 'utf-8'), sys.argv[1:]) 
+arg_enc = 'mbcs' if platform.system() == 'Windows' else 'utf-8'
+uargv = [unicode(s, arg_enc) for s in sys.argv[1:]] 
 
 if not uargv:
     help()
@@ -171,6 +167,12 @@ if not tracks.has_key('video'):
 if not tracks.has_key('audio'):
     fail('No audio tracks')
 
+# -- print prepared options
+tmpfile = codecs.getwriter('utf-8')(tempfile.NamedTemporaryFile())
+def uprint(*strings):
+    for s in strings:
+        tmpfile.write(s + '\n');
+
 # global options
 uprint(['--output', dest_file])
 uprint(['--command-line-charset', 'utf-8'])
@@ -212,6 +214,10 @@ if tracks.has_key('subtitles'):
         print_options(t['opts'])
 #        uprint(['--sub-charset', '-1:ucs-2le'])
         uprint([t['file']])
+
+tmpfile.flush()
+os.system('mkvmerge @' + tmpfile.name)
+tmpfile.close()
 
 """
 --output file
