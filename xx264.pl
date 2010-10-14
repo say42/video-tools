@@ -49,6 +49,9 @@ foreach my $name (keys %def_opts) {
 }
 my $no_idle = 0;
 $long_args{'no-idle!'} = \$no_idle;
+my $overwrite = 0;
+$long_args{'overwrite!'} = \$no_idle;
+
 
 GetOptions(%long_args) or die;
 
@@ -66,6 +69,10 @@ unless($def_opts{output}) {
 	$def_opts{output} = $output;
 }
 $def_opts{output} .= ".mkv" if $def_opts{output} !~ /\.\w{3}$/;
+
+if(-e $def_opts{output} && ! $overwrite) {
+	die "File '$def_opts{output}' already exists\n";
+}
 
 # log
 my $log = $def_opts{output};
