@@ -1,7 +1,8 @@
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use FindBin;
-use Encoding;
+use Encode;
 use lib "$FindBin::Bin";
 use ParseSrt;
 use Data::Dumper;
@@ -23,6 +24,12 @@ print $hdest "<html><body><table>";
 my $gi = 0;
 foreach my $bi (0 .. $#$badsubs) {
 	my $bsub = $badsubs->[$bi];
+	if($bi < $#$badsubs) {
+		if($bsub->{START} + $bsub->{DUR} >= $badsubs->[$bi + 1]->{START}) {
+			$bsub->{OVERLAP} = 1;
+			print "OVERLAP: $bsub->{ID}\n";
+		}
+	}
 	
 	while($goodsubs->[$gi]->{START} <= $bsub->{START} && $gi < $#$goodsubs) {
 		$gi++;
@@ -42,6 +49,7 @@ foreach my $bi (0 .. $#$badsubs) {
 		# previous pair
 		if(my $prev_bi = $goodsubs->[$best_gi]->{PAIR}) {
 			if($goodsubs->[$best_gi]->{DIFF} > $diff) {
+#				printf "unlink %d,%s\n", $prev_bi, $best_gi; # FIXME
 				delete $badsubs->[$prev_bi]->{PAIR};
 				$bsub->{PAIR} = $best_gi;
 				$goodsubs->[$best_gi]->{PAIR} = $bi;
@@ -52,7 +60,9 @@ foreach my $bi (0 .. $#$badsubs) {
 			$goodsubs->[$best_gi]->{PAIR} = $bi;
 			$goodsubs->[$best_gi]->{DIFF} = $diff;
 		}
+#		printf "%d,%d: %d\n", $bi, $best_gi, $diff; # FIXME
 	}
+
 
 #  print $hdest Encode::encode($enc, "$id$CRLF");
 #  print $hdest Encode::encode($enc, "$tm1 --> $tm2$CRLF");
@@ -60,17 +70,19 @@ foreach my $bi (0 .. $#$badsubs) {
 #  print $hdest Encode::encode($enc, $CRLF);
 }
 
+#print Dumper($badsubs, $goodsubs); exit 1; # FIXME
+
 {
 	while(@$goodsubs || @$badsubs) {
 		my $bsub = shift @$badsubs;
 		my $gsub = shift @$goodsubs;
-		if($bsub && $bsub->{PAIR}) {
-			while(! $gsub->{PAIR}) {
+		if($bsub && exists $bsub->{PAIR}) {
+			while(! exists $gsub->{PAIR}) {
 				prsubs($hdest, undef, $gsub);
 				$gsub = shift @$goodsubs;
 			}
-		} elsif($gsub && $gsub->{PAIR}) {
-			while(! $bsub->{PAIR}) {
+		} elsif($gsub && exists $gsub->{PAIR}) {
+			while(! exists $bsub->{PAIR}) {
 				prsubs($hdest, $bsub, undef);
 				$bsub = shift @$badsubs;
 			}
@@ -88,8 +100,9 @@ exit 0;
 sub sub2html {
 	my $sub = shift;
 
-	my $s = $sub->{ID} . "<br>";;
-	$s .= ParseSrt::ms2str($sub->{START})."<br>";
+	my $style = $sub->{OVERLAP} ? 'color: red; font-weight: bold' : 'color: black;';
+	my $s = $sub->{ID}  . "<br>";
+	$s .= "<span style='$style'>" . ParseSrt::ms2str($sub->{START}) . "&nbsp;" . ParseSrt::ms2str($sub->{START}+$sub->{DUR}) . "</span><br>";
 	$s .= "$_<br>" foreach @{$sub->{TEXT}};
 	return $s;
 }
@@ -104,12 +117,12 @@ sub prsubs {
 	my $diff = '';
 	my $style = 'color: black;';
 	my $pair = '';
-	if($sub1 && $sub1->{PAIR}) {
+	if($sub1 && exists $sub1->{PAIR}) {
 		$pair = " $sub1->{ID}  $sub2->{ID}";
 		$diff = $sub1->{START} - $sub2->{START};
-		if(abs($diff) >= 200) {
+		if(abs($diff) >= 300) {
 			$style = 'color: red; font-weight: bold';
-		} elsif(abs($diff) >= 100) {
+		} elsif(abs($diff) >= 200) {
 			$style = 'color: red;';
 		}
 	}

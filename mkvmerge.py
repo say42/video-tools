@@ -93,11 +93,11 @@ def guess_options(file, guess_opts):
 
 def print_options(opts):
     if opts.has_key('title'):
-        uprint(['--track-name', '-1:' + opts['title']])
+        uprint('--track-name', '-1:' + opts['title'])
     if opts.has_key('lang'):
-        uprint(['--language', '-1:' + opts['lang']])
+        uprint('--language', '-1:' + opts['lang'])
     if opts.has_key('delay'):
-        uprint(['--sync', '-1:' + opts['delay']])
+        uprint('--sync', '-1:' + opts['delay'])
 
 
 arg_enc = 'mbcs' if platform.system() == 'Windows' else 'utf-8'
@@ -168,16 +168,16 @@ if not tracks.has_key('audio'):
     fail('No audio tracks')
 
 # -- print prepared options
-tmpfile = codecs.getwriter('utf-8')(tempfile.NamedTemporaryFile())
+tmpfile = codecs.getwriter('utf-8')(tempfile.NamedTemporaryFile(delete=False))
 def uprint(*strings):
     for s in strings:
         tmpfile.write(s + '\n');
 
 # global options
-uprint(['--output', dest_file])
-uprint(['--command-line-charset', 'utf-8'])
-#uprint(['--output-charset', 'utf-8'])
-#uprint(['--default-language', def_lang])
+uprint('--output', dest_file)
+uprint('--command-line-charset', 'utf-8')
+#uprint('--output-charset', 'utf-8')
+#uprint('--default-language', def_lang)
 
 # chapters
 if tracks.has_key('chapters'):
@@ -185,39 +185,40 @@ if tracks.has_key('chapters'):
     if len(tt) > 1:
         fail("Only single chapters file allowed")
     t = tt[0]
-    uprint(['--chapter-charset', 'utf-8'])
+    uprint('--chapter-charset', 'utf-8')
     print_options(t['opts'])
-    uprint(['--chapters', t['file']])
+    uprint('--chapters', t['file'])
 
 is_first_v_track = True
 for t in tracks['video']:
     if is_first_v_track:
         print_options(t['opts'])
-        uprint(['--default-track', '-1:1'])
-        uprint([t['file']])
+        uprint('--default-track', '-1:1')
+        uprint(t['file'])
         is_first_v_track = False
     else:
-        uprint(['+' + t['file']])
+        uprint('+' + t['file'])
 
 is_first_a_track = True
 for t in tracks['audio']:
     if is_first_a_track:
-        uprint(['--default-track', '-1:1'])
+        uprint('--default-track', '-1:1')
     is_first_a_track = False
     print_options(t['opts'])
-    uprint(['--no-chapters'])
-    uprint([t['file']])
+    uprint('--no-chapters')
+    uprint(t['file'])
 
 if tracks.has_key('subtitles'):
     for t in tracks['subtitles']:
-        uprint(['--default-track', '-1:0'])
+        uprint('--default-track', '-1:0')
         print_options(t['opts'])
-#        uprint(['--sub-charset', '-1:ucs-2le'])
-        uprint([t['file']])
+#        uprint('--sub-charset', '-1:ucs-2le')
+        uprint(t['file'])
 
 tmpfile.flush()
-os.system('mkvmerge @' + tmpfile.name)
 tmpfile.close()
+os.system('mkvmerge @' + tmpfile.name)
+os.unlink(tmpfile.name)
 
 """
 --output file
