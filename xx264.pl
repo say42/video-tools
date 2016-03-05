@@ -1,10 +1,9 @@
+#!/usr/bin/env perl
 use strict;
 use warnings;
 
 use Getopt::Long; # qw(:config pass_through);
 use Data::Dumper;
-use Win32;
-use Win32::Process;
 use POSIX qw(strftime);
 
 my %def_opts = (
@@ -55,10 +54,7 @@ $long_args{'overwrite!'} = \$no_idle;
 
 GetOptions(%long_args) or die;
 
-unless($no_idle) {
-	Win32::Process::Open(my $proc, $$, 0) or die ErrorReport();
-	$proc->SetPriorityClass(IDLE_PRIORITY_CLASS) or die ErrorReport();
-}
+do_nice() unless($no_idle);
 
 # input/output
 my $input = shift @ARGV || 'demux.avs';
@@ -107,7 +103,7 @@ my $starttime = time;
 
 print $hlog "$cmdline\n\n";
 
-open(my $hcmd, "$cmdline |") or die "cmd(): $!";
+open(my $hcmd, "$cmdline |") or die "cmd($cmdline): $!";
 binmode $hcmd;
 my $buf = '';
 while(!eof($hcmd)) {
@@ -130,3 +126,17 @@ printf $hlog "\nFinished %s (%dd %02dh %02dm)\n",
 ;
 
 close($hlog);
+
+sub do_nice {
+	if ($^O eq "MSWin32") {
+		require Win32;
+		require Win32::Process;
+		Win32::Process::Open(my $proc, $$, 0) or die Win32::ErrorReport();
+		$proc->SetPriorityClass(Win32::Process::IDLE_PRIORITY_CLASS()) or die Win32::ErrorReport();
+	} elsif ($^O eq "linux") {
+		require POSIX;
+		POSIX::nice(19);
+	} else {
+		die "Unexpected OS $^O";
+	}
+}
