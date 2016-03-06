@@ -110,8 +110,11 @@ while(!eof($hcmd)) {
 	read($hcmd, my $str, 100);
 	$buf .= $str;
 	while(my($line) = $buf =~ /^([^\r\n]*?[\r\n]+)/) {
-		 print $hlog "$line" unless $line =~ /^\[\d+\.\d+%\]/ || $line =~ /^ +\r$/;
-		 $buf =~ s/^[^\r\n]*?[\r\n]+//;
+		next if $line =~ /^\[\d+\.\d+%\]/ || $line =~ /^ +\r$/;
+		next if $line =~ /^\d+ frames:/;
+		print $hlog "$line" unless $line =~ /^\[\d+\.\d+%\]/ || $line =~ /^ +\r$/;
+	} continue {
+		$buf =~ s/^[^\r\n]*?[\r\n]+//;
 	}
 }
 print $hlog $buf;
