@@ -26,7 +26,7 @@ TRACK_TYPES = {
         'guess_opts': 'delay title'.split(),
     },
     'video': {
-        'valid_opts': 'lang title'.split(),
+        'valid_opts': 'lang title delay'.split(),
     },
     'chapters': {
         'valid_opts': 'lang'.split(),
