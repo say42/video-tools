@@ -14,6 +14,7 @@ OPT_SEPARATOR = '@'
 TRACK_EXTS = {
     '.ac3': 'audio',
     '.mp4': 'audio',
+    '.mp3': 'audio',
     '.mkv': 'video',
     '.txt': 'chapters',
     '.srt': 'subtitles',
