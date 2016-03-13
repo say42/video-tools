@@ -37,13 +37,14 @@ TRACK_TYPES = {
         'guess_opts': 'delay'.split(),
     },
     'DEFAULT': {
-       'valid_opts': 'lang'.split(),
+       'valid_opts': 'lang filetitle'.split(),
     },
 }
 
 OPTION_DEFS = [
     dict(name='delay', re=r'^(-?\d+)ms$'),
     dict(name='lang', re=r'^([a-z]{3})$'),
+    dict(name='filetitle', re=r'^ft:(.+)$'),
     dict(name='title', re=r'^(.+)$'),
 ]
 
@@ -134,7 +135,7 @@ for arg in uargv[1:]:
     # Check if all options are valid
     for k in track_opts.keys():
         if not k in valid_opts_list:
-            fail("Option %s not valid for track type %s" % k, track_type)
+            fail("Option {} not valid for track type {}".format(k, track_type))
 
     # set default options and go to next track
     if not track_file:
@@ -177,6 +178,8 @@ def uprint(*strings):
 # global options
 uprint('--output', dest_file)
 uprint('--command-line-charset', 'utf-8')
+if def_opts.has_key('filetitle'):
+    uprint('--title', def_opts['filetitle'])
 #uprint('--output-charset', 'utf-8')
 #uprint('--default-language', def_lang)
 
